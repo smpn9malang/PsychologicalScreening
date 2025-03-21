@@ -11,9 +11,23 @@
   "distress_signs": [],
   "immediate_concerns": "asdasd",
   "physical_notes": "asdasdasdqweqwe",
-  "assessment_step": "look",
+  "assessment_step": "listen",
   "look_complete": true,
   "id": "32c4417f-f2b8-4eae-a6d9-64a425a40231",
   "created_at": "2025-03-21 04:00:37",
-  "last_updated": "2025-03-21 04:00:37"
+  "last_updated": "2025-03-21 10:39:25",
+  "chief_complaint": "qweqwe",
+  "narrative": "qweqweqweqwe",
+  "primary_emotion": "Sadness",
+  "emotional_intensity": 5,
+  "support_systems": [
+    "None",
+    "Religious/Spiritual"
+  ],
+  "coping_strategies": "",
+  "suicide_risk": "None indicated",
+  "harm_risk": "None indicated",
+  "counselor_notes": "adsda",
+  "high_risk": false,
+  "listen_complete": true
 }
