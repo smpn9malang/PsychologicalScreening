@@ -4,9 +4,13 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
+    "flask>=3.1.0",
+    "flask-cors>=5.0.1",
+    "flask-restful>=0.3.10",
     "pandas>=2.2.3",
     "plotly>=6.0.1",
     "psycopg2-binary>=2.9.10",
+    "pyjwt>=2.10.1",
     "sqlalchemy>=2.0.39",
     "streamlit>=1.43.2",
 ]
