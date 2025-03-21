@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from utils.database import initialize_db, get_patients
+from utils.db_connector import test_database_connection, initialize_database
 
 # Page configuration
 st.set_page_config(
@@ -11,8 +12,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize database if it doesn't exist
-initialize_db()
+# Initialize database
+# First try PostgreSQL database, then fall back to file storage if needed
+if 'db_initialized' not in st.session_state:
+    connection_ok, _ = test_database_connection()
+    if connection_ok:
+        st.session_state.db_initialized = initialize_database()
+    else:
+        st.session_state.db_initialized = False
+        initialize_db()  # Initialize file storage as fallback
 
 def main():
     # Sidebar for navigation
@@ -50,7 +58,7 @@ def main():
     
     # Quick action buttons
     st.subheader("Quick Actions")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         if st.button("New Patient Assessment", use_container_width=True):
@@ -59,6 +67,17 @@ def main():
     with col2:
         if st.button("View Reports", use_container_width=True):
             st.switch_page("pages/5_Reports.py")
+            
+    with col3:
+        if st.button("Database Admin", use_container_width=True):
+            st.switch_page("pages/6_Database_Admin.py")
+    
+    # Database connection status
+    connection_ok, _ = test_database_connection()
+    if connection_ok:
+        st.success("✅ Using PostgreSQL Database")
+    else:
+        st.warning("⚠️ Using file-based storage (PostgreSQL connection unavailable)")
     
     # Recent patients
     st.subheader("Recent Patients")

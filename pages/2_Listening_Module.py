@@ -177,6 +177,15 @@ def main():
                         st.warning("⚠️ HIGH RISK ALERT: This patient shows indicators of being at high risk. Immediate professional intervention may be necessary.")
                     
                     st.info("Proceed to the Screening Tools to continue the assessment.")
+        
+        # Add navigation buttons outside of the form
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Back to Patient Assessment"):
+                st.switch_page("pages/1_Patient_Assessment.py")
+        with col2:
+            if st.button("Continue to Screening Tools"):
+                st.switch_page("pages/3_Screening_Tools.py")
 
 if __name__ == "__main__":
     main()
