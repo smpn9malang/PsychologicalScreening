@@ -1,8 +1,12 @@
 import streamlit as st
 import pandas as pd
 import os
+import threading
 from utils.database import initialize_db, get_patients
 from utils.db_connector import test_database_connection, initialize_database
+
+# Initialize Flask API in a separate thread
+from api import api_app
 
 # Page configuration
 st.set_page_config(
@@ -11,6 +15,16 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Start the API server in a separate thread
+def run_api_server():
+    api_app.run(host='0.0.0.0', port=8000, debug=False, threaded=True)
+
+# Start the API server if it hasn't been started yet
+if 'api_started' not in st.session_state:
+    api_thread = threading.Thread(target=run_api_server, daemon=True)
+    api_thread.start()
+    st.session_state.api_started = True
 
 # Initialize database
 # First try PostgreSQL database, then fall back to file storage if needed
@@ -78,6 +92,46 @@ def main():
         st.success("✅ Using PostgreSQL Database")
     else:
         st.warning("⚠️ Using file-based storage (PostgreSQL connection unavailable)")
+    
+    # API Information
+    with st.expander("API Access Information"):
+        st.markdown("""
+        ### REST API
+        
+        This application provides REST API access to all data, features, and services.
+        
+        **Base URL**: `http://localhost:8000/api/v1`
+        
+        #### Authentication
+        
+        To use the API, you need to authenticate first:
+        
+        ```
+        POST /api/v1/auth/login
+        
+        {
+            "username": "admin",
+            "password": "admin"
+        }
+        ```
+        
+        This will return a JWT token that you need to include in the `Authorization` header for all other requests:
+        
+        ```
+        Authorization: Bearer <token>
+        ```
+        
+        #### Available Endpoints
+        
+        - **Patients**: `/api/v1/patients`
+        - **Consultants**: `/api/v1/consultants`
+        - **Psychiatrists**: `/api/v1/psychiatrists`
+        - **Screening Tools**: `/api/v1/screening-tools`
+        - **Listening Templates**: `/api/v1/listening-templates`
+        - **Referrals**: `/api/v1/referrals`
+        
+        For more detailed API documentation, please contact the administrator.
+        """)
     
     # Recent patients
     st.subheader("Recent Patients")
