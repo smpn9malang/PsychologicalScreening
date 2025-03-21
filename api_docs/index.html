@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PFA Counseling API Documentation</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/a11y-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --sidebar-width: 280px;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            position: relative;
+            min-height: 100vh;
+        }
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+        }
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            padding: 20px 0;
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-heading {
+            padding: 0 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #6c757d;
+        }
+        .nav-link {
+            padding: 8px 20px;
+            color: var(--dark-color);
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #f8f9fa;
+            border-left-color: var(--secondary-color);
+        }
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            padding-bottom: 70px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-nav-toggle {
+                display: block !important;
+            }
+        }
+        .mobile-nav-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            border: none;
+            font-size: 18px;
+        }
+        .section {
+            margin-bottom: 50px;
+        }
+        .endpoint {
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .endpoint-header {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+        .endpoint-body {
+            padding: 20px;
+        }
+        .method {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 80px;
+            text-align: center;
+        }
+        .method.get {
+            background-color: var(--success-color);
+        }
+        .method.post {
+            background-color: var(--secondary-color);
+        }
+        .method.put {
+            background-color: var(--warning-color);
+        }
+        .method.delete {
+            background-color: var(--danger-color);
+        }
+        .url {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+        pre {
+            background-color: #282c34;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .params-table {
+            margin: 15px 0;
+        }
+        .params-table th {
+            background-color: #f8f9fa;
+        }
+        .tab-content {
+            padding: 20px 0;
+        }
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--dark-color);
+            padding: 10px 20px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-tabs .nav-link:hover {
+            border-bottom-color: #dee2e6;
+        }
+        .nav-tabs .nav-link.active {
+            color: var(--secondary-color);
+            border-bottom-color: var(--secondary-color);
+            background-color: transparent;
+        }
+        .footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            line-height: 60px;
+            background-color: white;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            text-align: center;
+        }
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            color: white !important;
+            text-align: center;
+            line-height: 40px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .back-to-top:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-brain me-2"></i>
+                PFA Counseling API
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#introduction">Introduction</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#authentication">Authentication</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="client/index.html" target="_blank">Sample Client</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar">
+        <p class="sidebar-heading pt-4">API Reference</p>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="#introduction">
+                    <i class="fas fa-info-circle"></i> Introduction
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#authentication">
+                    <i class="fas fa-lock"></i> Authentication
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#patients">
+                    <i class="fas fa-users"></i> Patients
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#consultants">
+                    <i class="fas fa-user-md"></i> Consultants
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#psychiatrists">
+                    <i class="fas fa-user-md"></i> Psychiatrists
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#screening-tools">
+                    <i class="fas fa-notes-medical"></i> Screening Tools
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#listening-templates">
+                    <i class="fas fa-headphones"></i> Listening Templates
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#referrals">
+                    <i class="fas fa-exchange-alt"></i> Referrals
+                </a>
+            </li>
+        </ul>
+        <p class="sidebar-heading pt-4">Resources</p>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="client/index.html" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> Sample Client App
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="https://github.com/your-repo/pfa-counseling" target="_blank">
+                    <i class="fab fa-github"></i> GitHub Repository
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <button class="mobile-nav-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="main-content">
+        <section id="introduction" class="section">
+            <h1 class="mb-4">PFA Counseling API Documentation</h1>
+            <div class="alert alert-primary">
+                <i class="fas fa-info-circle me-2"></i> This documentation covers version 1.0 of the PFA Counseling API.
+            </div>
+            <p>
+                The PFA Counseling API provides programmatic access to the Psychological First Aid Counseling application's data and services.
+                It allows developers to integrate mental health assessment, screening, and referral services into their own applications.
+            </p>
+            <p>
+                The API follows RESTful principles and uses JSON for request and response payloads. All endpoints require authentication
+                except for the login endpoint.
+            </p>
+            <h3>Base URL</h3>
+            <div class="bg-light p-3 rounded">
+                <code>http://localhost:8000/api/v1</code>
+            </div>
+        </section>
+
+        <section id="authentication" class="section">
+            <h2 class="mb-4">Authentication</h2>
+            <p>
+                The API uses JSON Web Tokens (JWT) for authentication. To access protected endpoints, you need to include the token
+                in the Authorization header of your requests.
+            </p>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="url">/auth/login</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Authenticates a user and returns a JWT token.</p>
+                    
+                    <h5>Request Body</h5>
+                    <pre><code class="language-json">{
+  "username": "admin",
+  "password": "admin"
+}</code></pre>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Authentication successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "is_admin": true
+    }
+  }
+}</code></pre>
+                    
+                    <h5>Error Response</h5>
+                    <pre><code class="language-json">{
+  "status": "error",
+  "message": "Invalid username or password"
+}</code></pre>
+                    
+                    <h5>Using the Token</h5>
+                    <p>Include the token in your API requests:</p>
+                    <pre><code class="language-http">Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="url">/auth/verify-token</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Verifies a JWT token and returns user information.</p>
+                    
+                    <h5>Request Headers</h5>
+                    <pre><code class="language-http">Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Token is valid",
+  "data": {
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "is_admin": true
+    }
+  }
+}</code></pre>
+                    
+                    <h5>Error Response</h5>
+                    <pre><code class="language-json">{
+  "status": "error",
+  "message": "Invalid or expired token"
+}</code></pre>
+                </div>
+            </div>
+        </section>
+        
+        <section id="patients" class="section">
+            <h2 class="mb-4">Patients</h2>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/patients</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a list of patients with pagination.</p>
+                    
+                    <h5>Request Parameters</h5>
+                    <table class="table params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>page</td>
+                                <td>integer</td>
+                                <td>No</td>
+                                <td>Page number (default: 1)</td>
+                            </tr>
+                            <tr>
+                                <td>per_page</td>
+                                <td>integer</td>
+                                <td>No</td>
+                                <td>Items per page (default: 10, max: 100)</td>
+                            </tr>
+                            <tr>
+                                <td>search</td>
+                                <td>string</td>
+                                <td>No</td>
+                                <td>Search query to filter patients by name</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Patients retrieved successfully",
+  "data": {
+    "patients": [
+      {
+        "id": "12345",
+        "name": "John Doe",
+        "age": 35,
+        "gender": "Male",
+        "personal_data": {
+          "address": "123 Main St",
+          "phone": "555-1234",
+          "email": "john@example.com"
+        },
+        "assessment_data": {
+          "observations": "Patient appears anxious"
+        },
+        "screening_data": {
+          "srq_score": 5,
+          "srq_interpretation": "Low risk"
+        },
+        "created_at": "2023-01-01T12:00:00Z",
+        "updated_at": "2023-01-02T14:30:00Z"
+      },
+      // More patients...
+    ],
+    "pagination": {
+      "page": 1,
+      "per_page": 10,
+      "total_count": 35,
+      "total_pages": 4
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/patients/:id</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a single patient by ID.</p>
+                    
+                    <h5>Path Parameters</h5>
+                    <table class="table params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>id</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>Patient ID</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Patient retrieved successfully",
+  "data": {
+    "patient": {
+      "id": "12345",
+      "name": "John Doe",
+      "age": 35,
+      "gender": "Male",
+      "personal_data": {
+        "address": "123 Main St",
+        "phone": "555-1234",
+        "email": "john@example.com"
+      },
+      "assessment_data": {
+        "observations": "Patient appears anxious"
+      },
+      "screening_data": {
+        "srq_score": 5,
+        "srq_interpretation": "Low risk",
+        "dass_scores": {
+          "depression": 4,
+          "anxiety": 5,
+          "stress": 6
+        },
+        "dass_interpretations": {
+          "depression": "Normal",
+          "anxiety": "Mild",
+          "stress": "Normal"
+        }
+      },
+      "created_at": "2023-01-01T12:00:00Z",
+      "updated_at": "2023-01-02T14:30:00Z"
+    }
+  }
+}</code></pre>
+                    
+                    <h5>Error Response</h5>
+                    <pre><code class="language-json">{
+  "status": "error",
+  "message": "Patient not found"
+}</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="url">/patients</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Creates a new patient.</p>
+                    
+                    <h5>Request Body</h5>
+                    <pre><code class="language-json">{
+  "name": "Jane Smith",
+  "age": 28,
+  "gender": "Female",
+  "personal_data": {
+    "address": "456 Elm St",
+    "phone": "555-5678",
+    "email": "jane@example.com"
+  }
+}</code></pre>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Patient created successfully",
+  "data": {
+    "patient": {
+      "id": "67890",
+      "name": "Jane Smith",
+      "age": 28,
+      "gender": "Female",
+      "personal_data": {
+        "address": "456 Elm St",
+        "phone": "555-5678",
+        "email": "jane@example.com"
+      },
+      "created_at": "2023-02-15T10:30:00Z",
+      "updated_at": "2023-02-15T10:30:00Z"
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="url">/patients/:id</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Updates an existing patient.</p>
+                    
+                    <h5>Path Parameters</h5>
+                    <table class="table params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>id</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>Patient ID</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h5>Request Body</h5>
+                    <pre><code class="language-json">{
+  "name": "Jane Smith-Johnson",
+  "personal_data": {
+    "address": "789 Oak Lane",
+    "phone": "555-5678"
+  },
+  "assessment_data": {
+    "observations": "Patient appears less anxious than previous visit"
+  }
+}</code></pre>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Patient updated successfully",
+  "data": {
+    "patient": {
+      "id": "67890",
+      "name": "Jane Smith-Johnson",
+      "age": 28,
+      "gender": "Female",
+      "personal_data": {
+        "address": "789 Oak Lane",
+        "phone": "555-5678",
+        "email": "jane@example.com"
+      },
+      "assessment_data": {
+        "observations": "Patient appears less anxious than previous visit"
+      },
+      "created_at": "2023-02-15T10:30:00Z",
+      "updated_at": "2023-02-16T14:20:00Z"
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="url">/patients/:id</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Deletes a patient. Requires admin privileges.</p>
+                    
+                    <h5>Path Parameters</h5>
+                    <table class="table params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>id</td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>Patient ID</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Patient deleted successfully"
+}</code></pre>
+                    
+                    <h5>Error Response</h5>
+                    <pre><code class="language-json">{
+  "status": "error",
+  "message": "Unauthorized: Admin privileges required"
+}</code></pre>
+                </div>
+            </div>
+        </section>
+        
+        <section id="consultants" class="section">
+            <h2 class="mb-4">Consultants</h2>
+            <p>Consultants are mental health professionals who can be referred to patients for further support.</p>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/consultants</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a list of mental health consultants.</p>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Consultants retrieved successfully",
+  "data": {
+    "consultants": [
+      {
+        "id": 1,
+        "name": "Dr. Sarah Johnson",
+        "specialty": "Cognitive Behavioral Therapy",
+        "contact_information": {
+          "phone": "555-9876",
+          "email": "sarah@example.com",
+          "address": "123 Therapy Lane"
+        },
+        "created_at": "2023-01-10T09:00:00Z",
+        "updated_at": "2023-01-10T09:00:00Z"
+      },
+      // More consultants...
+    ]
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- More consultant endpoints... -->
+        </section>
+        
+        <section id="psychiatrists" class="section">
+            <h2 class="mb-4">Psychiatrists</h2>
+            <p>Psychiatrists are medical doctors who can prescribe medication and provide specialized psychiatric care.</p>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/psychiatrists</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a list of psychiatrists.</p>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Psychiatrists retrieved successfully",
+  "data": {
+    "psychiatrists": [
+      {
+        "id": 1,
+        "name": "Dr. Michael Chen",
+        "specialization": "Adult Psychiatry",
+        "contact_information": {
+          "phone": "555-1122",
+          "email": "chen@example.com",
+          "address": "456 Medical Plaza"
+        },
+        "created_at": "2023-01-15T11:00:00Z",
+        "updated_at": "2023-01-15T11:00:00Z"
+      },
+      // More psychiatrists...
+    ]
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- More psychiatrist endpoints... -->
+        </section>
+        
+        <section id="screening-tools" class="section">
+            <h2 class="mb-4">Screening Tools</h2>
+            <p>Screening tools are standardized questionnaires used to assess mental health conditions.</p>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/screening-tools</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a list of available screening tools.</p>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Screening tools retrieved successfully",
+  "data": {
+    "screening_tools": [
+      {
+        "id": 1,
+        "name": "SRQ-20",
+        "description": "Self-Reporting Questionnaire (20 items)",
+        "questions": [
+          {
+            "id": 1,
+            "text": "Do you often have headaches?",
+            "type": "yes_no"
+          },
+          // More questions...
+        ],
+        "created_at": "2023-01-05T08:00:00Z",
+        "updated_at": "2023-01-05T08:00:00Z"
+      },
+      {
+        "id": 2,
+        "name": "DASS-42",
+        "description": "Depression Anxiety Stress Scale (42 items)",
+        "questions": [
+          {
+            "id": 1,
+            "text": "I found it hard to wind down",
+            "type": "scale",
+            "options": ["Not at all", "Sometimes", "Often", "Almost always"],
+            "category": "stress"
+          },
+          // More questions...
+        ],
+        "created_at": "2023-01-05T08:30:00Z",
+        "updated_at": "2023-01-05T08:30:00Z"
+      }
+    ]
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="url">/screening-results</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Calculates screening results based on answers.</p>
+                    
+                    <h5>Request Body</h5>
+                    <pre><code class="language-json">{
+  "tool_id": 1,
+  "answers": {
+    "1": true,
+    "2": false,
+    "3": true,
+    // More answers...
+  }
+}</code></pre>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Screening results calculated successfully",
+  "data": {
+    "score": 5,
+    "interpretation": "Low risk of depression or anxiety",
+    "subscales": {
+      "depression": 2,
+      "anxiety": 3,
+      "psychotic": 0
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- More screening tool endpoints... -->
+        </section>
+        
+        <section id="listening-templates" class="section">
+            <h2 class="mb-4">Listening Templates</h2>
+            <p>Listening templates provide structure for the "Listen" phase of PFA.</p>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/listening-templates</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a list of listening templates.</p>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Listening templates retrieved successfully",
+  "data": {
+    "templates": [
+      {
+        "id": 1,
+        "title": "General Assessment",
+        "description": "General template for patient listening session",
+        "sections": [
+          {
+            "title": "Current Concerns",
+            "questions": [
+              "What brings you here today?",
+              "How long have you been feeling this way?",
+              "What makes it better or worse?"
+            ]
+          },
+          {
+            "title": "Support Systems",
+            "questions": [
+              "Who can you talk to when you're upset?",
+              "What activities help you feel better?"
+            ]
+          }
+        ],
+        "created_at": "2023-01-20T10:00:00Z",
+        "updated_at": "2023-01-20T10:00:00Z"
+      },
+      // More templates...
+    ]
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- More listening template endpoints... -->
+        </section>
+        
+        <section id="referrals" class="section">
+            <h2 class="mb-4">Referrals</h2>
+            <p>Referrals connect patients with appropriate mental health professionals.</p>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="url">/referrals</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Returns a list of referrals with optional filtering.</p>
+                    
+                    <h5>Request Parameters</h5>
+                    <table class="table params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>patient_id</td>
+                                <td>string</td>
+                                <td>No</td>
+                                <td>Filter by patient ID</td>
+                            </tr>
+                            <tr>
+                                <td>status</td>
+                                <td>string</td>
+                                <td>No</td>
+                                <td>Filter by status (pending, completed, cancelled)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Referrals retrieved successfully",
+  "data": {
+    "referrals": [
+      {
+        "id": 1,
+        "patient_id": "12345",
+        "patient_name": "John Doe",
+        "referral_date": "2023-02-01T09:30:00Z",
+        "referral_type": "consultant",
+        "referred_to": {
+          "id": 1,
+          "name": "Dr. Sarah Johnson",
+          "specialty": "Cognitive Behavioral Therapy"
+        },
+        "reason": "Anxiety symptoms requiring CBT approach",
+        "status": "pending",
+        "notes": "Patient agreed to follow up within 2 weeks",
+        "created_at": "2023-02-01T09:30:00Z",
+        "updated_at": "2023-02-01T09:30:00Z"
+      },
+      // More referrals...
+    ]
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="url">/referrals</span>
+                </div>
+                <div class="endpoint-body">
+                    <p>Creates a new referral.</p>
+                    
+                    <h5>Request Body</h5>
+                    <pre><code class="language-json">{
+  "patient_id": "67890",
+  "referral_type": "psychiatrist",
+  "referred_to_id": 1,
+  "reason": "Severe depression symptoms potentially requiring medication",
+  "notes": "Urgent referral, please schedule within 1 week"
+}</code></pre>
+                    
+                    <h5>Response</h5>
+                    <pre><code class="language-json">{
+  "status": "success",
+  "message": "Referral created successfully",
+  "data": {
+    "referral": {
+      "id": 2,
+      "patient_id": "67890",
+      "patient_name": "Jane Smith",
+      "referral_date": "2023-02-16T15:45:00Z",
+      "referral_type": "psychiatrist",
+      "referred_to": {
+        "id": 1,
+        "name": "Dr. Michael Chen",
+        "specialization": "Adult Psychiatry"
+      },
+      "reason": "Severe depression symptoms potentially requiring medication",
+      "status": "pending",
+      "notes": "Urgent referral, please schedule within 1 week",
+      "created_at": "2023-02-16T15:45:00Z",
+      "updated_at": "2023-02-16T15:45:00Z"
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+            
+            <!-- More referral endpoints... -->
+        </section>
+        
+        <footer class="footer mt-5">
+            <div class="container">
+                <span>PFA Counseling API Documentation &copy; 2023</span>
+            </div>
+        </footer>
+    </div>
+    
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Back to top button
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTop.style.display = 'block';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('backToTop').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Sidebar toggle for mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+        
+        // Highlight active nav item based on scroll position
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.sidebar .nav-link');
+        
+        window.addEventListener('scroll', function() {
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                
+                if (pageYOffset >= (sectionTop - 100)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').slice(1) === current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
