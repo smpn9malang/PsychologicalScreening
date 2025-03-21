@@ -59,6 +59,18 @@ def initialize_database():
     try:
         # Create patients table
         with conn.cursor() as cur:
+            # Create shared update_updated_at function
+            cur.execute("""
+                CREATE OR REPLACE FUNCTION update_updated_at_column()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    NEW.updated_at = NOW();
+                    RETURN NEW;
+                END;
+                $$ language 'plpgsql';
+            """)
+            
+            # 1. PATIENTS TABLE
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS patients (
                     id VARCHAR(50) PRIMARY KEY,
@@ -73,17 +85,6 @@ def initialize_database():
                 CREATE INDEX IF NOT EXISTS idx_patients_id ON patients(id)
             """)
             
-            # Create a trigger to automatically update the updated_at field
-            cur.execute("""
-                CREATE OR REPLACE FUNCTION update_updated_at_column()
-                RETURNS TRIGGER AS $$
-                BEGIN
-                    NEW.updated_at = NOW();
-                    RETURN NEW;
-                END;
-                $$ language 'plpgsql';
-            """)
-            
             cur.execute("""
                 DROP TRIGGER IF EXISTS update_patients_updated_at ON patients;
             """)
@@ -91,6 +92,133 @@ def initialize_database():
             cur.execute("""
                 CREATE TRIGGER update_patients_updated_at
                 BEFORE UPDATE ON patients
+                FOR EACH ROW
+                EXECUTE FUNCTION update_updated_at_column();
+            """)
+            
+            # 2. MENTAL HEALTH CONSULTANTS TABLE
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS consultants (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    specialization VARCHAR(100) NOT NULL,
+                    qualifications TEXT,
+                    contact_info JSONB,
+                    availability JSONB,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cur.execute("""
+                DROP TRIGGER IF EXISTS update_consultants_updated_at ON consultants;
+            """)
+            
+            cur.execute("""
+                CREATE TRIGGER update_consultants_updated_at
+                BEFORE UPDATE ON consultants
+                FOR EACH ROW
+                EXECUTE FUNCTION update_updated_at_column();
+            """)
+            
+            # 3. PSYCHIATRISTS TABLE
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS psychiatrists (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    specialization VARCHAR(100) NOT NULL,
+                    qualifications TEXT,
+                    hospital VARCHAR(100),
+                    contact_info JSONB,
+                    availability JSONB,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cur.execute("""
+                DROP TRIGGER IF EXISTS update_psychiatrists_updated_at ON psychiatrists;
+            """)
+            
+            cur.execute("""
+                CREATE TRIGGER update_psychiatrists_updated_at
+                BEFORE UPDATE ON psychiatrists
+                FOR EACH ROW
+                EXECUTE FUNCTION update_updated_at_column();
+            """)
+            
+            # 4. SCREENING TOOLS TABLE
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS screening_tools (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    questions JSONB NOT NULL,
+                    scoring_method TEXT,
+                    interpretation_guide TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cur.execute("""
+                DROP TRIGGER IF EXISTS update_screening_tools_updated_at ON screening_tools;
+            """)
+            
+            cur.execute("""
+                CREATE TRIGGER update_screening_tools_updated_at
+                BEFORE UPDATE ON screening_tools
+                FOR EACH ROW
+                EXECUTE FUNCTION update_updated_at_column();
+            """)
+            
+            # 5. LISTENING TEMPLATES TABLE
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS listening_templates (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    questions JSONB NOT NULL,
+                    guidelines TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cur.execute("""
+                DROP TRIGGER IF EXISTS update_listening_templates_updated_at ON listening_templates;
+            """)
+            
+            cur.execute("""
+                CREATE TRIGGER update_listening_templates_updated_at
+                BEFORE UPDATE ON listening_templates
+                FOR EACH ROW
+                EXECUTE FUNCTION update_updated_at_column();
+            """)
+            
+            # 6. REFERRALS TABLE
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS referrals (
+                    id SERIAL PRIMARY KEY,
+                    patient_id VARCHAR(50) REFERENCES patients(id),
+                    consultant_id INTEGER REFERENCES consultants(id) NULL,
+                    psychiatrist_id INTEGER REFERENCES psychiatrists(id) NULL,
+                    reason TEXT NOT NULL,
+                    notes TEXT,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    appointment_date TIMESTAMP NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cur.execute("""
+                DROP TRIGGER IF EXISTS update_referrals_updated_at ON referrals;
+            """)
+            
+            cur.execute("""
+                CREATE TRIGGER update_referrals_updated_at
+                BEFORE UPDATE ON referrals
                 FOR EACH ROW
                 EXECUTE FUNCTION update_updated_at_column();
             """)
@@ -116,7 +244,10 @@ def test_database_connection():
         with conn.cursor() as cur:
             cur.execute("SELECT version()")
             version = cur.fetchone()
-            return True, f"Successfully connected to PostgreSQL: {version[0]}"
+            if version and len(version) > 0:
+                return True, f"Successfully connected to PostgreSQL: {version[0]}"
+            else:
+                return True, "Successfully connected to PostgreSQL"
     except Exception as e:
         return False, f"Error testing database: {e}"
     finally:
