@@ -3,9 +3,7 @@ import datetime
 from functools import wraps
 from flask import request, g
 from api.utils import error_response
-
-# Secret key for JWT - in production, this should be stored securely
-SECRET_KEY = "your-secret-key-here"  # This should be changed in production
+from api.config import SECRET_KEY
 
 def generate_token(user_id, additional_claims=None):
     """Generate a JWT token for a user"""
