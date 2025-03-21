@@ -2,11 +2,15 @@ import streamlit as st
 import datetime
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from utils.database import save_patient, get_patient, get_patients
 from utils.screening_tools import (
-    get_srq_questions, 
+    get_srq20_questions,
+    get_srq29_questions,
+    calculate_srq20_score,
+    calculate_srq29_score,
+    get_srq29_subscale_scores,
     get_dass42_questions,
-    calculate_srq_score,
     calculate_dass42_scores
 )
 
@@ -81,7 +85,7 @@ def main():
         
         # Select screening tool
         st.sidebar.subheader("Select Screening Tool")
-        screening_tool = st.sidebar.radio("Tool", ["SRQ-20", "DASS-42"])
+        screening_tool = st.sidebar.radio("Tool", ["SRQ-20", "SRQ-29 WHO", "DASS-42"])
         st.session_state.current_screening_tool = screening_tool
         
         # Display summary of risk assessment from listening module
@@ -104,8 +108,8 @@ def main():
             st.subheader("Self-Reporting Questionnaire (SRQ-20)")
             st.write("The SRQ-20 is a screening tool designed to identify mental health problems in primary care settings.")
             
-            # Get SRQ questions
-            srq_questions = get_srq_questions()
+            # Get SRQ-20 questions
+            srq_questions = get_srq20_questions()
             
             # Get previous answers if they exist
             previous_answers = patient_data.get('srq_answers', {})
@@ -120,17 +124,17 @@ def main():
                     default = previous_answers.get(key, False)
                     srq_answers[key] = st.checkbox(f"{i}. {question}", value=default)
                 
-                submitted = st.form_submit_button("Calculate SRQ Score")
+                submitted = st.form_submit_button("Calculate SRQ-20 Score")
                 
                 if submitted:
                     # Calculate score
-                    score = calculate_srq_score(srq_answers)
+                    score = sum(1 for key, value in srq_answers.items() if value)
                     
                     # Prepare screening data
                     screening_data = {
-                        'srq_score': score,
+                        'srq20_score': score,
                         'srq_answers': srq_answers,
-                        'srq_complete': True,
+                        'srq20_complete': True,
                         'referral_needed': score >= 8  # Threshold for referral
                     }
                     
@@ -152,6 +156,174 @@ def main():
                     # Show referral button
                     if score >= 8:
                         if st.button("Proceed to Referral"):
+                            st.switch_page("pages/4_Referral_System.py")
+        
+        elif screening_tool == "SRQ-29 WHO":
+            st.subheader("Self-Reporting Questionnaire (SRQ-29 WHO)")
+            st.write("The SRQ-29 WHO extends the SRQ-20 with additional questions about psychotic symptoms, epileptic seizures, and alcohol use.")
+            
+            # Get SRQ-29 questions
+            srq_questions = get_srq29_questions()
+            
+            # Get previous answers if they exist
+            previous_answers = patient_data.get('srq_answers', {})
+            
+            with st.form("srq29_form"):
+                st.write("In the past 30 days:")
+                
+                # Create tabs for different sections
+                tab1, tab2, tab3, tab4 = st.tabs(["Anxiety & Depression (1-20)", "Psychotic Symptoms (21-24)", 
+                                                 "Epilepsy (25)", "Alcohol Use (26-29)"])
+                
+                srq_answers = {}
+                
+                with tab1:
+                    st.subheader("Anxiety & Depression Symptoms")
+                    # First 20 questions (SRQ-20 part)
+                    for i, question in enumerate(srq_questions[:20], 1):
+                        key = f"srq_{i}"
+                        # Use previous answer as default if available
+                        default = previous_answers.get(key, False)
+                        srq_answers[key] = st.checkbox(f"{i}. {question}", value=default)
+                
+                with tab2:
+                    st.subheader("Psychotic Symptoms")
+                    # Questions 21-24 (Psychotic symptoms)
+                    for i, question in enumerate(srq_questions[20:24], 21):
+                        key = f"srq_{i}"
+                        # Use previous answer as default if available
+                        default = previous_answers.get(key, False)
+                        srq_answers[key] = st.checkbox(f"{i}. {question}", value=default)
+                
+                with tab3:
+                    st.subheader("Epileptic Seizures")
+                    # Question 25 (Epileptic seizures)
+                    key = "srq_25"
+                    default = previous_answers.get(key, False)
+                    srq_answers[key] = st.checkbox(f"25. {srq_questions[24]}", value=default)
+                
+                with tab4:
+                    st.subheader("Alcohol Use")
+                    # Questions 26-29 (Alcohol use)
+                    for i, question in enumerate(srq_questions[25:], 26):
+                        key = f"srq_{i}"
+                        # Use previous answer as default if available
+                        default = previous_answers.get(key, False)
+                        srq_answers[key] = st.checkbox(f"{i}. {question}", value=default)
+                
+                submitted = st.form_submit_button("Calculate SRQ-29 Score")
+                
+                if submitted:
+                    # Calculate scores
+                    total_score = calculate_srq29_score(srq_answers)
+                    subscale_scores = get_srq29_subscale_scores(srq_answers)
+                    
+                    # Prepare screening data
+                    screening_data = {
+                        'srq29_score': total_score,
+                        'srq29_anxiety_depression': subscale_scores['anxiety_depression'],
+                        'srq29_psychotic': subscale_scores['psychotic'],
+                        'srq29_epileptic': subscale_scores['epileptic'],
+                        'srq29_alcohol': subscale_scores['alcohol'],
+                        'srq_answers': srq_answers,
+                        'srq29_complete': True,
+                        'referral_needed': total_score >= 10 or subscale_scores['psychotic'] >= 1 or 
+                                         subscale_scores['epileptic'] >= 1 or subscale_scores['alcohol'] >= 2
+                    }
+                    
+                    # Update patient data
+                    update_patient_screening_data(screening_data)
+                    
+                    # Display results
+                    st.success(f"SRQ-29 Total Score: {total_score}/29")
+                    
+                    # Display subscale scores
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        anxiety_depression_score = subscale_scores['anxiety_depression']
+                        st.metric("Anxiety & Depression", f"{anxiety_depression_score}/20")
+                        if anxiety_depression_score >= 11:
+                            st.error("Severe")
+                        elif anxiety_depression_score >= 8:
+                            st.warning("Moderate")
+                        elif anxiety_depression_score >= 5:
+                            st.info("Mild")
+                    
+                    with col2:
+                        psychotic_score = subscale_scores['psychotic']
+                        st.metric("Psychotic Symptoms", f"{psychotic_score}/4")
+                        if psychotic_score >= 1:
+                            st.error("Requires specialized assessment")
+                    
+                    with col3:
+                        epileptic_score = subscale_scores['epileptic']
+                        st.metric("Epileptic Seizures", f"{epileptic_score}/1")
+                        if epileptic_score == 1:
+                            st.error("Requires medical assessment")
+                    
+                    with col4:
+                        alcohol_score = subscale_scores['alcohol']
+                        st.metric("Alcohol Problems", f"{alcohol_score}/4")
+                        if alcohol_score >= 2:
+                            st.error("Indicates alcohol issues")
+                        elif alcohol_score == 1:
+                            st.warning("Possible alcohol issues")
+                    
+                    # Create visualization for subscale scores
+                    data = {
+                        'Category': ['Anxiety & Depression', 'Psychotic', 'Epileptic', 'Alcohol'],
+                        'Score': [
+                            subscale_scores['anxiety_depression'],
+                            subscale_scores['psychotic'],
+                            subscale_scores['epileptic'],
+                            subscale_scores['alcohol']
+                        ],
+                        'Max Score': [20, 4, 1, 4]  # Maximum possible scores for each category
+                    }
+                    
+                    # Calculate percentage of maximum for better visualization
+                    data['Percentage'] = [
+                        (data['Score'][i] / data['Max Score'][i]) * 100 if data['Max Score'][i] > 0 else 0
+                        for i in range(len(data['Score']))
+                    ]
+                    
+                    df = pd.DataFrame(data)
+                    
+                    fig = px.bar(df, x='Category', y='Percentage', color='Category',
+                                text=[f"{s}/{m}" for s, m in zip(data['Score'], data['Max Score'])],
+                                title="SRQ-29 WHO Subscale Scores")
+                    fig.update_layout(yaxis_title="Percentage of Maximum Score")
+                    st.plotly_chart(fig)
+                    
+                    # Determine if referral is needed
+                    referral_needed = (
+                        subscale_scores['anxiety_depression'] >= 8 or 
+                        subscale_scores['psychotic'] >= 1 or 
+                        subscale_scores['epileptic'] == 1 or 
+                        subscale_scores['alcohol'] >= 2
+                    )
+                    
+                    if referral_needed:
+                        st.warning("Based on the SRQ-29 results, this patient needs referral to appropriate healthcare professionals.")
+                        
+                        # Provide specific referral guidance
+                        if subscale_scores['anxiety_depression'] >= 8:
+                            st.info("⚕️ Anxiety & Depression: Refer to mental health professional")
+                        
+                        if subscale_scores['psychotic'] >= 1:
+                            st.info("⚕️ Psychotic Symptoms: Refer to psychiatrist for specialized assessment")
+                        
+                        if subscale_scores['epileptic'] == 1:
+                            st.info("⚕️ Epileptic Seizures: Refer to neurologist or general physician")
+                        
+                        if subscale_scores['alcohol'] >= 2:
+                            st.info("⚕️ Alcohol Issues: Refer to addiction specialist or counselor")
+                        
+                        if st.button("Proceed to Referral"):
+                            st.switch_page("pages/4_Referral_System.py")
+                    else:
+                        st.info("Based on the SRQ-29 results, this patient may not require immediate specialist referral but should be monitored.")
+                        if st.button("Continue to Referral System"):
                             st.switch_page("pages/4_Referral_System.py")
         
         elif screening_tool == "DASS-42":
