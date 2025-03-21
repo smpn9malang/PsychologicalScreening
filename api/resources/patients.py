@@ -3,7 +3,7 @@ from flask import request
 from flask_restful import Resource
 from utils.db_connector import get_db_connection
 from api.auth import token_required, admin_required
-from api.utils import success_response, error_response, parse_json_field, format_patient_data
+from api.utils import success_response, error_response, parse_json_field, format_patient_data, format_datetime
 
 class PatientResource(Resource):
     """Resource for individual patient operations"""
@@ -23,12 +23,6 @@ class PatientResource(Resource):
                         return error_response(f"Patient with ID {patient_id} not found", 404)
                     
                     patient_dict = dict(zip(columns, result))
-                    
-                    # Parse the JSONB data field
-                    if 'data' in patient_dict and patient_dict['data']:
-                        patient_dict['data'] = json.loads(patient_dict['data'])
-                    
-                    # Format data for API response
                     formatted_patient = format_patient_data(patient_dict)
                     
                     return success_response(formatted_patient)
@@ -50,27 +44,35 @@ class PatientResource(Resource):
         if conn:
             try:
                 with conn.cursor() as cur:
-                    # First check if patient exists
+                    # Check if patient exists
                     cur.execute("SELECT * FROM patients WHERE id = %s", (patient_id,))
                     if not cur.fetchone():
                         return error_response(f"Patient with ID {patient_id} not found", 404)
                     
-                    # Retrieve existing data
-                    cur.execute("SELECT data FROM patients WHERE id = %s", (patient_id,))
-                    result = cur.fetchone()
-                    existing_data = json.loads(result[0]) if result else {}
-                    
-                    # Merge existing data with new data
-                    existing_data.update(data)
-                    updated_data = json.dumps(existing_data)
+                    # Prepare JSON fields
+                    personal_data = json.dumps(data.get('personal_data', {}))
+                    assessment_data = json.dumps(data.get('assessment_data', {}))
+                    listening_data = json.dumps(data.get('listening_data', {}))
+                    screening_data = json.dumps(data.get('screening_data', {}))
                     
                     # Update the patient
                     cur.execute("""
-                        UPDATE patients 
-                        SET data = %s
+                        UPDATE patients
+                        SET name = %s, age = %s, gender = %s,
+                            personal_data = %s, assessment_data = %s,
+                            listening_data = %s, screening_data = %s
                         WHERE id = %s
                         RETURNING id
-                    """, (updated_data, patient_id))
+                    """, (
+                        data.get('name'),
+                        data.get('age'),
+                        data.get('gender'),
+                        personal_data,
+                        assessment_data,
+                        listening_data,
+                        screening_data,
+                        patient_id
+                    ))
                     
                     conn.commit()
                     
@@ -95,13 +97,11 @@ class PatientResource(Resource):
                     if not cur.fetchone():
                         return error_response(f"Patient with ID {patient_id} not found", 404)
                     
-                    # Check if patient has associated referrals
+                    # Check if any referrals reference this patient
                     cur.execute("SELECT COUNT(*) FROM referrals WHERE patient_id = %s", (patient_id,))
                     referral_count = cur.fetchone()[0]
-                    
                     if referral_count > 0:
-                        # Delete associated referrals first
-                        cur.execute("DELETE FROM referrals WHERE patient_id = %s", (patient_id,))
+                        return error_response(f"Cannot delete: Patient is referenced in {referral_count} referrals", 400)
                     
                     # Delete the patient
                     cur.execute("DELETE FROM patients WHERE id = %s", (patient_id,))
@@ -131,32 +131,56 @@ class PatientListResource(Resource):
                     page = int(request.args.get('page', 1))
                     per_page = int(request.args.get('per_page', 10))
                     
+                    # Get search parameter
+                    search = request.args.get('search', '')
+                    gender = request.args.get('gender', '')
+                    min_age = request.args.get('min_age')
+                    max_age = request.args.get('max_age')
+                    
                     # Calculate offset
                     offset = (page - 1) * per_page
                     
+                    # Build query based on search parameters
+                    query = "SELECT * FROM patients"
+                    query_params = []
+                    query_conditions = []
+                    
+                    if search:
+                        query_conditions.append("name ILIKE %s")
+                        query_params.append(f"%{search}%")
+                    
+                    if gender:
+                        query_conditions.append("gender = %s")
+                        query_params.append(gender)
+                    
+                    if min_age:
+                        query_conditions.append("age >= %s")
+                        query_params.append(int(min_age))
+                    
+                    if max_age:
+                        query_conditions.append("age <= %s")
+                        query_params.append(int(max_age))
+                    
+                    if query_conditions:
+                        query += " WHERE " + " AND ".join(query_conditions)
+                    
                     # Get total count
-                    cur.execute("SELECT COUNT(*) FROM patients")
+                    count_query = f"SELECT COUNT(*) FROM ({query}) AS filtered_patients"
+                    cur.execute(count_query, query_params)
                     total_count = cur.fetchone()[0]
                     
-                    # Get paginated results
-                    cur.execute("""
-                        SELECT * FROM patients 
-                        ORDER BY created_at DESC
-                        LIMIT %s OFFSET %s
-                    """, (per_page, offset))
+                    # Add ordering and pagination
+                    query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+                    query_params.extend([per_page, offset])
                     
+                    # Execute final query
+                    cur.execute(query, query_params)
                     columns = [desc[0] for desc in cur.description]
                     results = cur.fetchall()
                     
                     patients = []
                     for row in results:
                         patient_dict = dict(zip(columns, row))
-                        
-                        # Parse the JSONB data field
-                        if 'data' in patient_dict and patient_dict['data']:
-                            patient_dict['data'] = json.loads(patient_dict['data'])
-                        
-                        # Format data for API response
                         formatted_patient = format_patient_data(patient_dict)
                         patients.append(formatted_patient)
                     
@@ -186,31 +210,40 @@ class PatientListResource(Resource):
         if not data:
             return error_response("No input data provided", 400)
         
-        if 'id' not in data:
-            return error_response("Patient ID is required", 400)
-        
-        patient_id = data.pop('id')
+        # Validate required fields
+        if not data.get('name'):
+            return error_response("Patient name is required", 400)
         
         conn = get_db_connection()
         if conn:
             try:
                 with conn.cursor() as cur:
-                    # Check if patient already exists
-                    cur.execute("SELECT * FROM patients WHERE id = %s", (patient_id,))
-                    if cur.fetchone():
-                        return error_response(f"Patient with ID {patient_id} already exists", 409)
+                    # Prepare JSON fields
+                    personal_data = json.dumps(data.get('personal_data', {}))
+                    assessment_data = json.dumps(data.get('assessment_data', {}))
+                    listening_data = json.dumps(data.get('listening_data', {}))
+                    screening_data = json.dumps(data.get('screening_data', {}))
                     
                     # Create the patient
-                    patient_data = json.dumps(data)
                     cur.execute("""
-                        INSERT INTO patients (id, data)
-                        VALUES (%s, %s)
+                        INSERT INTO patients
+                        (name, age, gender, personal_data, assessment_data, listening_data, screening_data)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
                         RETURNING id
-                    """, (patient_id, patient_data))
+                    """, (
+                        data.get('name'),
+                        data.get('age'),
+                        data.get('gender', ''),
+                        personal_data,
+                        assessment_data,
+                        listening_data,
+                        screening_data
+                    ))
                     
+                    result = cur.fetchone()
                     conn.commit()
                     
-                    return success_response({'id': patient_id}, "Patient created successfully", 201)
+                    return success_response({'id': result[0]}, "Patient created successfully", 201)
             except Exception as e:
                 conn.rollback()
                 return error_response(f"Error creating patient: {str(e)}", 500)

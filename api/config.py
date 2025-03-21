@@ -1,23 +1,19 @@
-import os
-import secrets
-from datetime import timedelta
+# Configuration for the API
 
-# API Configuration
-API_VERSION = 'v1'
-API_PREFIX = f'/api/{API_VERSION}'
+# JWT Secret Key
+SECRET_KEY = "your-secret-key-here"  # This should be changed in production
 
-# Secret key for JWT token and other security needs
-SECRET_KEY = os.environ.get('API_SECRET_KEY', secrets.token_hex(32))
+# API Versioning
+API_VERSION = "v1"
+API_PREFIX = f"/api/{API_VERSION}"
 
-# JWT Configuration
-JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+# Request Rate Limiting
+RATE_LIMIT_DEFAULT = "100 per day, 10 per minute"
+RATE_LIMIT_AUTH_ENDPOINTS = "20 per day, 5 per minute"
 
-# Rate Limiting
-RATE_LIMIT = '100 per minute'
+# CORS Settings
+CORS_ORIGINS = ["*"]  # In production, this should be restricted to specific origins
 
-# CORS Configuration
-CORS_ORIGINS = ['*']  # In production, this should be more restrictive
-
-# Database Configuration
-# Using the same database as the main application
+# Default pagination settings
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 100
